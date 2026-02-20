@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A Question For You ✨</title>
+
+<style>
+:root{
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  background:
+    radial-gradient(circle at 20% 20%, #fff6fb, transparent 40%),
+    radial-gradient(circle at 80% 10%, #e6fbff, transparent 40%),
+    radial-gradient(circle at 60% 90%, #fff8e8, transparent 50%),
+    #ffffff;
+  overflow:hidden;
+}
+
+/* Sparkle background */
+body::before{
+  content:"";
+  position:fixed;
+  inset:-40px;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.9) 0 2px, transparent 3px),
+    radial-gradient(circle, rgba(255,255,255,.6) 0 1.5px, transparent 2.5px);
+  background-size:120px 120px, 80px 80px;
+  opacity:.4;
+  animation: drift 18s linear infinite;
+  pointer-events:none;
+}
+
+@keyframes drift{
+  from{ transform:translate(0,0); }
+  to{ transform:translate(-60px,40px); }
+}
+
+.card{
+  width:min(760px,calc(100% - 30px));
+  background:rgba(255,255,255,.8);
+  backdrop-filter:blur(12px);
+  border-radius:26px;
+  padding:28px;
+  box-shadow:0 30px 80px rgba(0,0,0,.15);
+  border:1px solid rgba(0,0,0,.08);
+}
+
+h1{
+  margin:0 0 10px;
+  font-size:clamp(28px,4vw,46px);
+}
+
+p{
+  margin:0 0 12px;
+  font-size:18px;
+  color:#444;
+}
+
+.question{
+  font-size:22px;
+  font-weight:800;
+  margin-top:10px;
+}
+
+.arena{
+  position:relative;
+  height:130px;
+  margin-top:20px;
+  border-radius:20px;
+  border:1px dashed rgba(0,0,0,.15);
+  background:rgba(255,255,255,.6);
+}
+
+.row{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+}
+
+button{
+  border:0;
+  padding:14px 20px;
+  border-radius:999px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.yes{
+  background:#111;
+  color:white;
+  font-weight:700;
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+}
+
+.no{
+  position:absolute;
+  left:60%;
+  top:55%;
+  transform:translate(-50%,-50%);
+  background:white;
+  border:1px solid rgba(0,0,0,.15);
+  font-weight:600;
+}
+
+.msg{
+  margin-top:18px;
+  padding:14px;
+  border-radius:16px;
+  background:white;
+  border:1px solid rgba(0,0,0,.08);
+  display:none;
+}
+
+/* Cursor trail */
+.trail{
+  position:fixed;
+  pointer-events:none;
+  z-index:9999;
+  animation:trailPop .8s forwards ease-out;
+  user-select:none;
+}
+
+@keyframes trailPop{
+  0%{ transform:translate(var(--x),var(--y)) scale(.5) rotate(0deg); opacity:0;}
+  10%{opacity:1;}
+  100%{
+    transform:translate(calc(var(--x) + var(--dx)),calc(var(--y) + var(--dy)))
+              scale(1.4) rotate(220deg);
+    opacity:0;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>Hey <span id="name">you</span> ✨</h1>
+  <p>I really like being around you.</p>
+  <p>You make everything feel brighter.</p>
+
+  <p class="question">Will you be my girlfriend?</p>
+
+  <div class="arena" id="arena">
+    <div class="row">
+      <button class="yes" id="yesBtn">Yes 💖</button>
+      <button class="no" id="noBtn">No 🙃</button>
+    </div>
+  </div>
+
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+/* Personalize via ?name=HerName */
+const params = new URLSearchParams(location.search);
+const name = params.get("name");
+if(name) document.getElementById("name").textContent = name;
+
+/* Runaway NO button */
+const arena = document.getElementById("arena");
+const noBtn = document.getElementById("noBtn");
+const yesBtn = document.getElementById("yesBtn");
+const msg = document.getElementById("msg");
+
+function clamp(n,min,max){ return Math.max(min,Math.min(max,n)); }
+
+function moveNo(x,y){
+  const a = arena.getBoundingClientRect();
+  const b = noBtn.getBoundingClientRect();
+  let vx = (b.left + b.width/2) - x;
+  let vy = (b.top + b.height/2) - y;
+  const mag = Math.hypot(vx,vy) || 1;
+  vx/=mag; vy/=mag;
+
+  const step = 140;
+  let left = parseFloat(noBtn.style.left||60) + (vx*step/a.width*100);
+  let top  = parseFloat(noBtn.style.top||55)  + (vy*step/a.height*100);
+
+  left = clamp(left,10,90);
+  top  = clamp(top,15,85);
+
+  noBtn.style.left = left+"%";
+  noBtn.style.top  = top+"%";
+}
+
+arena.addEventListener("mousemove",e=>{
+  const b=noBtn.getBoundingClientRect();
+  const dist=Math.hypot(e.clientX-(b.left+b.width/2),
+                        e.clientY-(b.top+b.height/2));
+  if(dist<120) moveNo(e.clientX,e.clientY);
+});
+
+noBtn.addEventListener("touchstart",e=>{
+  const t=e.touches[0];
+  moveNo(t.clientX,t.clientY);
+});
+
+/* Yes button */
+yesBtn.addEventListener("click",()=>{
+  msg.style.display="block";
+  msg.innerHTML="<strong>YAY 💖✨</strong><br>Okay my heart just did a backflip.";
+  confetti();
+});
+
+/* Confetti */
+function confetti(){
+  for(let i=0;i<120;i++){
+    const s=document.createElement("span");
+    s.textContent=["✨","💖","⭐","💫","🎉"][Math.floor(Math.random()*5)];
+    s.style.position="fixed";
+    s.style.left=Math.random()*100+"vw";
+    s.style.top="-10px";
+    s.style.fontSize=12+Math.random()*18+"px";
+    s.style.transition="transform 1.2s ease, opacity 1.2s ease";
+    document.body.appendChild(s);
+    requestAnimationFrame(()=>{
+      s.style.transform=`translate(${(Math.random()-.5)*60}px,100vh)`;
+      s.style.opacity=0;
+    });
+    setTimeout(()=>s.remove(),1200);
+  }
+}
+
+/* ⭐ Cursor Star Trail */
+const symbols=["⭐","✨","💫","🌟"];
+let last={x:0,y:0,t:0};
+
+function spawn(x,y){
+  const el=document.createElement("span");
+  el.className="trail";
+  el.textContent=symbols[Math.floor(Math.random()*symbols.length)];
+  el.style.fontSize=(12+Math.random()*14)+"px";
+  el.style.setProperty("--x",x+"px");
+  el.style.setProperty("--y",y+"px");
+  el.style.setProperty("--dx",(Math.random()-.5)*40+"px");
+  el.style.setProperty("--dy",(Math.random()-.5)*30+"px");
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),800);
+}
+
+function handleMove(x,y){
+  const now=Date.now();
+  const dist=Math.hypot(x-last.x,y-last.y);
+  if(dist>8 && now-last.t>10){
+    spawn(x,y);
+    last={x,y,t:now};
+  }
+}
+
+document.addEventListener("mousemove",e=>handleMove(e.clientX,e.clientY));
+document.addEventListener("touchmove",e=>{
+  const t=e.touches[0];
+  handleMove(t.clientX,t.clientY);
+},{passive:true});
+</script>
+
+</body>
+</html>
